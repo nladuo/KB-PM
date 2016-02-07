@@ -6,8 +6,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-extern void start_process(Process *process);
-extern void stop_process(Process *process);
+extern void start_process(process_s *process);
+extern void stop_process(process_s *process);
+extern void remove_process(const char* app_name);
 extern void start_all(void);
 extern void stop_all(void);
 extern void show_status(void);

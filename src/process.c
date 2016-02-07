@@ -27,6 +27,7 @@ int parse_process_list(const char* path, process_s process_list[])
     process_s *process;
     do{
         process = &process_list[index];
+        process->status.restart_times = 0;/*reset the app start times in startup.*/
         index++;
     }while(3 == fscanf(fp, "%s%s%d", process->app_name, process->cmd, &process->is_running));
 

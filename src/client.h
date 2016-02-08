@@ -2,9 +2,6 @@
 #define __CLIENT_H
 
 #include "process.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 
 extern void start_process(process_s *process);
 extern void stop_process(process_s *process);

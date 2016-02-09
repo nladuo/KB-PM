@@ -11,11 +11,18 @@
 #define BUFFER_SIZE 40 * 1024
 #endif /*BUFFER_SIZE*/
 
-extern void start_process(process_s *process);
-extern void stop_process(process_s *process);
+/*call request to start a process by app name.*/
+extern void start_process(const char *app_name);
+
+/*call request to stop a process by app name.*/
+extern void stop_process(const char *app_name);
+
 extern void remove_process(const char* app_name);
+
 extern void start_all(void);
+
 extern void stop_all(void);
+
 extern void show_status(void);
 
 #endif /*__CLIENT_H*/

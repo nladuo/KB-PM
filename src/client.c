@@ -10,36 +10,40 @@
 /*send signal to server and get the result back*/
 void communicate_signal(const char* sig, int* res, char* buffer);
 
-void start_process(process_s *process)
+void start_process(const char *app_name)
 {
-
-
+    printf("start_process:%s\n", app_name);
+    exit(EXIT_SUCCESS);
 }
 
-void stop_process(process_s *process)
+void stop_process(const char *app_name)
 {
-
-
+    printf("stop_process:%s\n", app_name);
+    exit(EXIT_SUCCESS);
 }
 
 void remove_process(const char* app_name)
 {
-
+    printf("remove_process:%s\n", app_name);
+    exit(EXIT_SUCCESS);
 }
 
 void start_all(void)
 {
-
+    printf("start_all\n");
+    exit(EXIT_SUCCESS);
 }
 
 void stop_all(void)
 {
-
+    printf("stop_all\n");
+    exit(EXIT_SUCCESS);
 }
 
 void show_status(void)
 {
-
+    printf("show_status\n");
+    exit(EXIT_SUCCESS);
 }
 
 /*send signal to server and get the result back*/

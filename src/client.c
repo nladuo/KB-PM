@@ -1,9 +1,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/un.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "client.h"
 
-void send_user_signal(char* sig);
+
+/*send signal to server and get the result back*/
+void communicate_signal(const char* sig, int* res, char* buffer);
 
 void start_process(process_s *process)
 {
@@ -32,8 +37,31 @@ void stop_all(void)
 
 }
 
-/*use fifo to communicate with kb_pm server*/
-void send_user_signal(char* sig)
+void show_status(void)
 {
 
+}
+
+/*send signal to server and get the result back*/
+void communicate_signal(const char* sig, int* res, char* buffer)
+{
+    int sockfd,len;
+    struct sockaddr_un addr;
+
+    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, "server_socket");
+    len = sizeof(addr);
+
+    *res = connect(sockfd, (struct sockaddr*)&addr, len);
+    if(*res == -1){
+        perror("socket err:");
+        return;
+    }
+
+    write(sockfd, sig, strlen(sig));
+    read(sockfd, buffer, BUFFER_SIZE);
+    printf("read form server:%s\n", buffer);
+    close(sockfd);
 }

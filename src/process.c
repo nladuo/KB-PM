@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
-
 #include "process.h"
 #include "../lib/cJSON.h"
 

@@ -14,7 +14,6 @@
 #include <semaphore.h>
 #include <signal.h>
 #include "server.h"
-#include "utils.h"
 
 /*daemonize the process*/
 void init_daemon(void);
@@ -73,7 +72,7 @@ void service_start(void)
     process_count = parse_process_list_from_path(config_path, process_list);
 
     /*daemonize the process*/
-    //init_daemon();
+    init_daemon();
 
     /*init mutex*/
     res = pthread_mutex_init(&process_list_mutex, NULL);

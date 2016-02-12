@@ -47,8 +47,9 @@ int main(int argc, char** argv)
     if(argc == 3){
 
         /*service start.*/
-        if((strcmp(argv[1], "start") == 0)
+        if((strcmp(argv[1], "service") == 0)
                 &&(strcmp(argv[2], "start") == 0)){
+            printf("Starting the server.\n");
             service_start();
         }
 
@@ -70,6 +71,9 @@ int main(int argc, char** argv)
         printf("arguments error, see usage.\n");
         exit(EXIT_FAILURE);
     }
+
+    printf("too many arguments, see usage.\n");
+    exit(EXIT_FAILURE);
 }
 
 void print_usage(void)

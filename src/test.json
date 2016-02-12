@@ -1,0 +1,14 @@
+[
+{
+        "app_name":     "hello1",
+        "cmd":  "./a.out",
+        "dir":  "/home/kalen",
+        "is_running":   1
+},
+{
+        "app_name":     "hello2",
+        "cmd":  "./a2.out",
+        "dir":  "/home/kalen",
+        "is_running":   1
+}
+]

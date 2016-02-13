@@ -9,17 +9,6 @@ void print_usage(void);
 
 int main(int argc, char** argv)
 {
-
-
-    /*int count = -1;
-    process_s process_list[256];
-    parse_process_list("./test.config", process_list);
-    get_process_list_count(process_list, &count);
-    fprintf(stdout, "count:%d\n", count);
-    del_process_by_app_name(process_list, "hello_world");
-    save_process_list("haha.config", process_list);
-    exit(EXIT_SUCCESS);*/
-
     if(argc == 1){
         print_usage();
         exit(EXIT_SUCCESS);
@@ -41,13 +30,14 @@ int main(int argc, char** argv)
             show_status();
         }
         printf("arguments error, see usage.\n");
+        print_usage();
         exit(EXIT_FAILURE);
     }
 
     if(argc == 3){
 
         /*service start.*/
-        if((strcmp(argv[1], "service") == 0)
+        if( (strcmp(argv[1], "service") == 0)
                 &&(strcmp(argv[2], "start") == 0)){
             printf("Starting the server.\n");
             service_start();
@@ -69,14 +59,23 @@ int main(int argc, char** argv)
         }
 
         printf("arguments error, see usage.\n");
+        print_usage();
         exit(EXIT_FAILURE);
     }
 
     printf("too many arguments, see usage.\n");
+    print_usage();
     exit(EXIT_FAILURE);
 }
 
 void print_usage(void)
 {
-    printf("print_usage\n");
+    printf(
+        "kbpm: a process manager to make process run forever.\n"
+        "Usage:\n"
+        "\tservice start:start the kbpm service\n"
+        "\tstart [arg]:start the program and run forever\n"
+        "\tstop [arg]:start the program and run forever\n"
+        "\tremove [arg]:start the program and run forever\n"
+        );
 }

@@ -3,9 +3,11 @@
 #include <stdlib.h>
 #include <sys/un.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <string.h>
 #include "client.h"
+#include "utils.h"
 
 /*send signal to server and get the result back*/
 void communicate_with_server(const char* sig, int* res, char* buffer);
@@ -15,12 +17,25 @@ void communicate_two_signals_with_server(char* sig1, char* sig2, int* res, char*
 
 void start_process(const char *cmd)
 {
-    int res;
+    int res, size;
     char sig[BUFFER_SIZE];
     char buffer[BUFFER_SIZE];
+    char dst[LIST_SIZE][STR_BUFFER_SIZE];
     process_s process;
+    /*check if cmd exist.*/
+    if(access(cmd, F_OK) == -1){
+        fprintf(stderr, "%s does not exit.\n", cmd);
+        exit(EXIT_FAILURE);
+    }
+    /*check if cmd can be executed.*/
+    if(access(cmd, X_OK) == -1){
+        fprintf(stderr, "%s cannot be executed.\n", cmd);
+        exit(EXIT_FAILURE);
+    }
+    size = str_split(dst, (char *)cmd, "/");
+
     /*set process values.*/
-    strcpy(process.app_name, cmd);
+    strcpy(process.app_name, dst[size - 1]);
     getcwd(process.dir, STR_BUFFER_SIZE);
     strcpy(process.cmd, cmd);
     process.is_running = 1;

@@ -13,7 +13,6 @@
 
 /*define the status struct.*/
 typedef struct{
-    char *memory;
     time_t uptime;
     int restart_times;
 } status_s;

@@ -39,6 +39,8 @@ void server_start_all_process(void);
 
 void server_stop_all_process(void);
 
+void get_process_list_status(char *buffer);
+
 /*get the quantity of running process in process_list.*/
 int get_running_process_count();
 
@@ -105,6 +107,7 @@ void service_start(void)
             exit(EXIT_FAILURE);
         }else{
             process->pid = pid;
+            process->status.restart_times = 0;
             printf("Starting %s with pid:%d",process->app_name, process->pid);
         }
     }
@@ -115,6 +118,7 @@ void service_start(void)
             usleep(100 * 1000);//sleep 100 ms
         }
         pid = wait(NULL);
+        pthread_mutex_lock(&process_list_mutex);
         for(i = 0; i < process_count; i++){
             process = &process_list[i];
             if(process->pid == pid){
@@ -132,11 +136,13 @@ void service_start(void)
                     exit(EXIT_FAILURE);
                 }else{
                     process->pid = pid;
-                    printf("restart app: %s\n", process->app_name);
+                    process->status.restart_times++;
+                    printf("Restart app: %s\n", process->app_name);
                     break;
                 }
             }
         }
+        pthread_mutex_unlock(&process_list_mutex);
     }
 }
 
@@ -191,10 +197,16 @@ void *server_socket_handle_func(void *args)
         client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_addr, &client_len);
         read(client_sockfd, buffer, STR_BUFFER_SIZE);
         if(strcmp(buffer, "startall") == 0){
+            /*command startall*/
             server_start_all_process();
         }else if(strcmp(buffer, "stopall") == 0){
+            /*command stopall*/
             server_stop_all_process();
+        }else if(strcmp(buffer, "status") == 0){
+            /*command status*/
+            get_process_list_status(buffer);
         }else if(strcmp(buffer, "start") == 0){
+            /*command start <app_name|cmd>*/
             printf("\nread from client : start process\n\n");
             write(client_sockfd, "pong", strlen("pong"));
             memset(buffer, '\0', sizeof(buffer));
@@ -206,13 +218,17 @@ void *server_socket_handle_func(void *args)
             }
             server_start_process(&process, response);
         }else if(strncmp(buffer, "stop", strlen("stop")) == 0){
-            // strcpy(buffer, &buffer[strlen("start ") - 1]);
+            /*command stop <app_name>*/
+            printf("\nread from client : stop process\n\n");
+            write(client_sockfd, "pong", strlen("pong"));
+            memset(buffer, '\0', sizeof(buffer));
+            /*get the appname*/
+            read(client_sockfd, buffer, STR_BUFFER_SIZE);
 
-            // server_stop_process(&process, response);
+            server_stop_process(&process, response);
         }else if(strncmp(buffer, "remove", strlen("remove")) == 0){
-            // strcpy(buffer, &buffer[strlen("remove ") - 1]);
+            /*command remove <app_name|app_id>*/
 
-            // server_remove_process(&process, response);
         }else{
             goto GO_ON;
         }
@@ -238,17 +254,29 @@ void server_start_process(process_s *process, char* response)
         perror("exit error:");
         exit(EXIT_FAILURE);
     }else{
+        pthread_mutex_lock(&process_list_mutex);
         process->pid = pid;
         /*add process to process_list tail.*/
         process_list[process_count] = *process; 
         printf("Starting %s with pid:%d",process->app_name, process->pid);
         strcpy(response, "start success");
+        pthread_mutex_unlock(&process_list_mutex);
     }
 }
 
 void server_stop_process(process_s *process, char* response)
 {
-
+    int res;
+    pthread_mutex_lock(&process_list_mutex);
+    if(process->is_running){
+        kill_process(process, &res);
+        process->pid = 0;
+        process->status.restart_times = 0;
+        strcpy(response, "stop success.");
+    }else{
+        strcpy(response, "the process is not running.");
+    }
+    pthread_mutex_unlock(&process_list_mutex);
 }
 
 void server_remove_process(process_s *process, char* response)
@@ -258,16 +286,56 @@ void server_remove_process(process_s *process, char* response)
 
 void server_start_all_process(void)
 {
-
+    int res, i;
+    pid_t pid;
+    process_s *process;
+    pthread_mutex_lock(&process_list_mutex);
+    for(i = 0; i < process_count; i++){
+        process = &process_list[i];
+        if(process->is_running){
+            continue;
+        }
+        pid = fork();
+        if(pid < 0){
+            fprintf(stderr, "can not fork(), error: %s", strerror(errno));
+            exit(EXIT_FAILURE);
+        }else if(pid == 0){/*the child process*/
+            ignore_signals();
+            /*exec the child process.*/
+            exec_process(process, &res);
+            exit(EXIT_FAILURE);
+        }else{
+            process->pid = pid;
+            process->status.restart_times = 0;
+            printf("Starting %s with pid:%d",process->app_name, process->pid);
+        }
+    }
+    pthread_mutex_unlock(&process_list_mutex);
 }
 
 void server_stop_all_process(void)
 {
-
+    int res, i;
+    process_s *process;
+    pthread_mutex_lock(&process_list_mutex);
+    for(i = 0; i < process_count; i++){
+        process = &process_list[i];
+        if(process->is_running){
+            kill_process(process, &res);
+            process->pid = 0;
+            process->status.restart_times = 0;
+        }
+    }
+    pthread_mutex_unlock(&process_list_mutex);
 }
 
-void get_processes_status(char *buffer)
+void get_process_list_status(char *buffer)
 {
+    int res;
+    res = create_process_list_json_str(process_list, process_count, buffer);
+    if(res == -1){
+        buffer = NULL;
+    }
 }
 
 void create_config_file(void)

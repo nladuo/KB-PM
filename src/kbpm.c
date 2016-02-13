@@ -72,10 +72,10 @@ void print_usage(void)
 {
     printf(
         "kbpm: a process manager to make process run forever.\n"
-        "Usage:\n"
-        "\tservice start:start the kbpm service\n"
-        "\tstart [arg]:start the program and run forever\n"
-        "\tstop [arg]:start the program and run forever\n"
-        "\tremove [arg]:start the program and run forever\n"
+        "    Usage  :  kbpm [cmd] app\n"
+        "\tservice  start          : start the kbpm service\n"
+        "\tstart    <app_name|cmd> : start the program and run forever\n"
+        "\tstop     <app_name>     : stop the program\n"
+        "\tremove   <arg_name>     : remove the program\n"
         );
 }

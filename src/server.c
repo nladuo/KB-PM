@@ -72,9 +72,13 @@ void service_start(void)
     strcpy(config_path, getenv("HOME"));
     strcat(config_path, CONFIG_PATH);
     process_count = parse_process_list_from_path(config_path, process_list);
+    if (process_count == -1)
+    {
+        process_count = 0;
+    }
 
     /*daemonize the process*/
-    init_daemon();
+    //init_daemon();
 
     /*init mutex*/
     res = pthread_mutex_init(&process_list_mutex, NULL);
@@ -118,6 +122,7 @@ void service_start(void)
             usleep(100 * 1000);//sleep 100 ms
         }
         pid = wait(NULL);
+        printf("pid: %d be killed\n", pid);
         pthread_mutex_lock(&process_list_mutex);
         for(i = 0; i < process_count; i++){
             process = &process_list[i];
@@ -137,7 +142,7 @@ void service_start(void)
                 }else{
                     process->pid = pid;
                     process->status.restart_times++;
-                    printf("Restart app: %s\n", process->app_name);
+                    printf("Restart app: %s dir:%s cmd:%s \n", process->app_name,process->dir, process->cmd);
                     break;
                 }
             }
@@ -174,6 +179,7 @@ void *server_socket_handle_func(void *args)
 {
     int server_sockfd, client_sockfd;
     int server_len, client_len;
+    int i, flag;
     char buffer[BUFFER_SIZE], response[BUFFER_SIZE];
     struct sockaddr_un server_addr, client_addr;
     process_s process;
@@ -199,23 +205,27 @@ void *server_socket_handle_func(void *args)
         if(strcmp(buffer, "startall") == 0){
             /*command startall*/
             server_start_all_process();
+            strcpy(response, "pong");
         }else if(strcmp(buffer, "stopall") == 0){
             /*command stopall*/
             server_stop_all_process();
+            strcpy(response, "pong");
         }else if(strcmp(buffer, "status") == 0){
             /*command status*/
-            get_process_list_status(buffer);
+            get_process_list_status(response);
         }else if(strcmp(buffer, "start") == 0){
             /*command start <app_name|cmd>*/
-            printf("\nread from client : start process\n\n");
+            printf("\nread from client : start\n\n");
             write(client_sockfd, "pong", strlen("pong"));
             memset(buffer, '\0', sizeof(buffer));
             read(client_sockfd, buffer, STR_BUFFER_SIZE);
+            printf("\nread from client : \n\n%s\n\n", buffer);
             if(parse_process(&process, buffer) == -1){
                 strcpy(buffer, "parse error");
                 write(client_sockfd, buffer, strlen(buffer));
                 goto GO_ON;
             }
+            printf("parse %s\n", process.app_name);
             server_start_process(&process, response);
         }else if(strncmp(buffer, "stop", strlen("stop")) == 0){
             /*command stop <app_name>*/
@@ -224,11 +234,29 @@ void *server_socket_handle_func(void *args)
             memset(buffer, '\0', sizeof(buffer));
             /*get the appname*/
             read(client_sockfd, buffer, STR_BUFFER_SIZE);
-
-            server_stop_process(&process, response);
+            printf("\nread from client : %s\n\n", buffer);
+            flag = 0;
+            for(i = 0; i < process_count; i++){
+                if(strcmp(process_list[i].app_name, buffer) == 0){
+                    flag = 1;
+                    break;
+                }
+            }
+            printf("flag = %d\n", flag);
+            if(!flag){/*flag == 0*/
+                strcpy(response, "cannot find the process named:");
+                strcat(response, buffer);
+                write(client_sockfd, response, strlen(response));
+                goto GO_ON;
+            }
+            printf("111111\n");
+            server_stop_process(&process_list[i], response);
+            printf("2222222\n");
         }else if(strncmp(buffer, "remove", strlen("remove")) == 0){
             /*command remove <app_name|app_id>*/
 
+        }else if(strcmp(buffer, "ping") == 0){
+            strcpy(response, "pong");
         }else{
             goto GO_ON;
         }
@@ -236,6 +264,7 @@ void *server_socket_handle_func(void *args)
 GO_ON:
         close(client_sockfd);
         memset(buffer, '\0', sizeof(buffer));
+        memset(response, '\0', sizeof(response));
     }
 }
 
@@ -243,6 +272,10 @@ void server_start_process(process_s *process, char* response)
 {
     int res;
     pid_t pid;
+    char config_path[STR_BUFFER_SIZE];
+    /*get config path according to $HOME*/
+    strcpy(config_path, getenv("HOME"));
+    strcat(config_path, CONFIG_PATH);
     pid = fork();
     if(pid < 0){
         fprintf(stderr, "can not fork(), error: %s", strerror(errno));
@@ -255,11 +288,13 @@ void server_start_process(process_s *process, char* response)
         exit(EXIT_FAILURE);
     }else{
         pthread_mutex_lock(&process_list_mutex);
-        process->pid = pid;
         /*add process to process_list tail.*/
-        process_list[process_count] = *process; 
+        process->pid = pid;
+        process_list[process_count] = *process;
+        process_count++;
         printf("Starting %s with pid:%d",process->app_name, process->pid);
         strcpy(response, "start success");
+        save_process_list(config_path, process_list);
         pthread_mutex_unlock(&process_list_mutex);
     }
 }
@@ -267,11 +302,16 @@ void server_start_process(process_s *process, char* response)
 void server_stop_process(process_s *process, char* response)
 {
     int res;
+    char config_path[STR_BUFFER_SIZE];
+    /*get config path according to $HOME*/
+    strcpy(config_path, getenv("HOME"));
+    strcat(config_path, CONFIG_PATH);
     pthread_mutex_lock(&process_list_mutex);
     if(process->is_running){
+        process->is_running = 0;
+        process->status.restart_times = 0;
         kill_process(process, &res);
         process->pid = 0;
-        process->status.restart_times = 0;
         strcpy(response, "stop success.");
     }else{
         strcpy(response, "the process is not running.");
@@ -281,7 +321,22 @@ void server_stop_process(process_s *process, char* response)
 
 void server_remove_process(process_s *process, char* response)
 {
+    int res;
+    char config_path[STR_BUFFER_SIZE];
+    /*get config path according to $HOME*/
+    strcpy(config_path, getenv("HOME"));
+    strcat(config_path, CONFIG_PATH);
 
+    pthread_mutex_lock(&process_list_mutex);
+    if(process->is_running){
+        kill_process(process, &res);
+        process->pid = 0;
+        process->status.restart_times = 0;
+    }
+    del_process_by_app_name(process_list, process->app_name);
+    process_count--;
+    save_process_list(config_path, process_list);
+    pthread_mutex_unlock(&process_list_mutex);
 }
 
 void server_start_all_process(void)
@@ -289,6 +344,11 @@ void server_start_all_process(void)
     int res, i;
     pid_t pid;
     process_s *process;
+    char config_path[STR_BUFFER_SIZE];
+    /*get config path according to $HOME*/
+    strcpy(config_path, getenv("HOME"));
+    strcat(config_path, CONFIG_PATH);
+
     pthread_mutex_lock(&process_list_mutex);
     for(i = 0; i < process_count; i++){
         process = &process_list[i];
@@ -310,6 +370,7 @@ void server_start_all_process(void)
             printf("Starting %s with pid:%d",process->app_name, process->pid);
         }
     }
+    save_process_list(config_path, process_list);
     pthread_mutex_unlock(&process_list_mutex);
 }
 
@@ -317,15 +378,22 @@ void server_stop_all_process(void)
 {
     int res, i;
     process_s *process;
+    char config_path[STR_BUFFER_SIZE];
+    /*get config path according to $HOME*/
+    strcpy(config_path, getenv("HOME"));
+    strcat(config_path, CONFIG_PATH);
+
     pthread_mutex_lock(&process_list_mutex);
     for(i = 0; i < process_count; i++){
         process = &process_list[i];
         if(process->is_running){
+            process->status.restart_times = 0;
+            process->is_running = 0;
             kill_process(process, &res);
             process->pid = 0;
-            process->status.restart_times = 0;
         }
     }
+    save_process_list(config_path, process_list);
     pthread_mutex_unlock(&process_list_mutex);
 }
 

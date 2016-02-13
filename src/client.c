@@ -21,18 +21,30 @@ void start_process(const char *cmd)
     char sig[BUFFER_SIZE];
     char buffer[BUFFER_SIZE];
     char dst[LIST_SIZE][STR_BUFFER_SIZE];
+    char cmd_copy[STR_BUFFER_SIZE];
     process_s process;
     /*check if cmd exist.*/
     if(access(cmd, F_OK) == -1){
-        fprintf(stderr, "%s does not exit.\n", cmd);
+        fprintf(stderr, "Error : %s does not exit.\n", cmd);
         exit(EXIT_FAILURE);
     }
     /*check if cmd can be executed.*/
     if(access(cmd, X_OK) == -1){
-        fprintf(stderr, "%s cannot be executed.\n", cmd);
+        fprintf(stderr, "Error : %s cannot be executed.\n", cmd);
         exit(EXIT_FAILURE);
     }
-    size = str_split(dst, (char *)cmd, "/");
+    /*check if the server is online.*/
+    ping_server(&res);
+    if(res != 0){
+        fprintf(stderr, "Error : server is not online.Run 'kbpm service start' to start the kbpm service.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /*get the app_name due to cmd.
+     *  For example, if the cmd is '/home/nladuo/a.out',
+     *  the app_name would be 'a.out'*/
+    strcpy(cmd_copy, cmd);
+    size = str_split(dst, (char *)cmd_copy, "/");
 
     /*set process values.*/
     strcpy(process.app_name, dst[size - 1]);
@@ -47,7 +59,7 @@ void start_process(const char *cmd)
     communicate_two_signals_with_server("start", sig, &res, buffer);
     if(res != 0){
         printf("%s\n", "server error occur");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     printf("result : %s\n", buffer);
 
@@ -56,31 +68,106 @@ void start_process(const char *cmd)
 
 void stop_process(const char *app_name)
 {
-    printf("stop_process:%s\n", app_name);
+    int res;
+    char buffer[BUFFER_SIZE];
+    /*check if the server is online.*/
+    ping_server(&res);
+    if(res != 0){
+        fprintf(stderr, "Error : server is not online.Run 'kbpm service start' to start the kbpm service.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    communicate_two_signals_with_server("stop", (char *)app_name, &res, buffer);
+    if(res != 0){
+        printf("%s\n", "server error occur");
+        exit(EXIT_FAILURE);
+    }
+    printf("result : %s\n", buffer);
+
     exit(EXIT_SUCCESS);
 }
 
 void remove_process(const char* app_name)
 {
-    printf("remove_process:%s\n", app_name);
+    int res;
+    char buffer[BUFFER_SIZE];
+    /*check if the server is online.*/
+    ping_server(&res);
+    if(res != 0){
+        fprintf(stderr, "Error : server is not online.Run 'kbpm service start' to start the kbpm service.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    communicate_two_signals_with_server("remove", (char *)app_name, &res, buffer);
+    if(res != 0){
+        printf("%s\n", "server error occur");
+        exit(EXIT_FAILURE);
+    }
+    printf("result : %s\n", buffer);
+
     exit(EXIT_SUCCESS);
 }
 
 void start_all(void)
 {
-    printf("start_all\n");
+    int res;
+    char buffer[BUFFER_SIZE];
+    /*check if the server is online.*/
+    ping_server(&res);
+    if(res != 0){
+        fprintf(stderr, "Error : server is not online.Run 'kbpm service start' to start the kbpm service.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    communicate_with_server("startall", &res, buffer);
+    if(res != 0){
+        printf("%s\n", "server error occur");
+        exit(EXIT_FAILURE);
+    }
+    printf("result : %s\n", buffer);
+
     exit(EXIT_SUCCESS);
 }
 
 void stop_all(void)
 {
-    printf("stop_all\n");
+    int res;
+    char buffer[BUFFER_SIZE];
+    /*check if the server is online.*/
+    ping_server(&res);
+    if(res != 0){
+        fprintf(stderr, "Error : server is not online.Run 'kbpm service start' to start the kbpm service.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    communicate_with_server("stopall", &res, buffer);
+    if(res != 0){
+        printf("%s\n", "server error occur");
+        exit(EXIT_FAILURE);
+    }
+    printf("result : %s\n", buffer);
+
     exit(EXIT_SUCCESS);
 }
 
 void show_status(void)
 {
-    printf("show_status\n");
+    int res;
+    char buffer[BUFFER_SIZE];
+    /*check if the server is online.*/
+    ping_server(&res);
+    if(res != 0){
+        fprintf(stderr, "Error : server is not online.Run 'kbpm service start' to start the kbpm service.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    communicate_with_server("status", &res, buffer);
+    if(res != 0){
+        printf("%s\n", "server error occur");
+        exit(EXIT_FAILURE);
+    }
+    printf("result : %s\n", buffer);
+
     exit(EXIT_SUCCESS);
 }
 

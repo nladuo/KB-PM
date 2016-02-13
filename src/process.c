@@ -64,29 +64,28 @@ int del_process_by_app_name(process_s process_list[], char* app_name)
         }
     }
     if(index == -1){
-        return 0;
+        return -1;
     }
     /* remove the process */
     for(i = index; i < count; i++){
         process_list[i] = process_list[i + 1];
     }
 
-    return 1;
+    return 0;
 }
 
 void save_process_list(const char* path, process_s process_list[])
 {
     FILE *fp;
     int i,count;
+    char buffer[BUFFER_SIZE];
     process_s* process;
     fp = fopen(path, "w");
 
     /*save the processes*/
     get_process_list_count(process_list, &count);
-    for(i = 0; i < count; i++){
-        process = &process_list[i];
-        fprintf(fp, "%s %s %d\n", process->app_name, process->cmd, process->is_running);
-    }
+    create_process_list_json_str(process_list, count, buffer);
+    fprintf(fp, "%s", buffer);
 }
 
 

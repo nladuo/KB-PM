@@ -27,18 +27,25 @@ void *server_socket_handle_func(void *);
 /*if the "~/.kbpm/process.config" does not exsit, create it.*/
 void create_config_file();
 
+/*start a process and listening its exit.*/
 void server_start_process(process_s *process, char* response);
 
+/*stop a process that server listening.*/
 void server_stop_process(process_s *process, char* response);
 
+/*stop a process that server listening and remove from process list.*/
 void server_remove_process(process_s *process, char* response);
 
+/*get process list info and status.*/
 void server_get_processes_status(char* buffer);
 
+/*start all processes and listening to them exit.*/
 void server_start_all_process(void);
 
+/*stop all processes that server listening.*/
 void server_stop_all_process(void);
 
+/*return the process_list status to client.*/
 void get_process_list_status(char *buffer);
 
 /*get the quantity of running process in process_list.*/
@@ -159,7 +166,6 @@ void service_start(void)
 void service_enable(const char* os_type)
 {
 
-
 }
 
 int get_running_process_count()
@@ -215,26 +221,22 @@ void *server_socket_handle_func(void *args)
             get_process_list_status(response);
         }else if(strcmp(buffer, "start") == 0){
             /*command start <app_name|cmd>*/
-            printf("\nread from client : start\n\n");
             write(client_sockfd, "pong", strlen("pong"));
             memset(buffer, '\0', sizeof(buffer));
             read(client_sockfd, buffer, STR_BUFFER_SIZE);
-            printf("\nread from client : \n\n%s\n\n", buffer);
+            /*if parse error occur*/
             if(parse_process(&process, buffer) == -1){
                 strcpy(buffer, "parse error");
                 write(client_sockfd, buffer, strlen(buffer));
                 goto GO_ON;
             }
-            printf("parse %s\n", process.app_name);
             server_start_process(&process, response);
         }else if(strncmp(buffer, "stop", strlen("stop")) == 0){
             /*command stop <app_name>*/
-            printf("\nread from client : stop process\n\n");
             write(client_sockfd, "pong", strlen("pong"));
             memset(buffer, '\0', sizeof(buffer));
             /*get the appname*/
             read(client_sockfd, buffer, STR_BUFFER_SIZE);
-            printf("\nread from client : %s\n\n", buffer);
             flag = 0;
             for(i = 0; i < process_count; i++){
                 if(strcmp(process_list[i].app_name, buffer) == 0){
@@ -242,16 +244,13 @@ void *server_socket_handle_func(void *args)
                     break;
                 }
             }
-            printf("flag = %d\n", flag);
             if(!flag){/*flag == 0*/
                 strcpy(response, "cannot find the process named:");
                 strcat(response, buffer);
                 write(client_sockfd, response, strlen(response));
                 goto GO_ON;
             }
-            printf("111111\n");
             server_stop_process(&process_list[i], response);
-            printf("2222222\n");
         }else if(strncmp(buffer, "remove", strlen("remove")) == 0){
             /*command remove <app_name|app_id>*/
 
@@ -270,12 +269,68 @@ GO_ON:
 
 void server_start_process(process_s *process, char* response)
 {
-    int res;
+    int res, i;
+    int flag;
     pid_t pid;
     char config_path[STR_BUFFER_SIZE];
+    process_s *p;
     /*get config path according to $HOME*/
     strcpy(config_path, getenv("HOME"));
     strcat(config_path, CONFIG_PATH);
+    /*if the length of process->cmd is 0.
+     *  find the app name and start the former process*/
+    if(!strlen(process->cmd)){
+        flag = 0;
+        for (i = 0; i < process_count; ++i){
+            p = &process_list[i];
+            if(strcmp(p->app_name, process->app_name) == 0){
+                flag = 1;
+                break;
+            }
+        }
+        if (!flag)
+        {
+            sprintf(response, "cannot find a app named %s\n", process->app_name);
+            return;
+        }
+        if (p->is_running){
+            sprintf(response, "%s have already been running\n", process->app_name);
+        }else{
+            /*start the process*/
+            pid = fork();
+            if(pid < 0){
+                fprintf(stderr, "can not fork(), error: %s", strerror(errno));
+                exit(EXIT_FAILURE);
+            }else if(pid == 0){/*the child process*/
+                ignore_signals();
+                /*exec the child process.*/
+                exec_process(p, &res);
+                perror("exit error:");
+                exit(EXIT_FAILURE);
+            }else{/*the parent process*/
+                pthread_mutex_lock(&process_list_mutex);
+                p->pid = pid;
+                p->is_running = 1;
+                sprintf(response, "Starting %s with pid:%d",p->app_name, p->pid);
+                save_process_list(config_path, process_list);
+                pthread_mutex_unlock(&process_list_mutex);
+            }
+        }
+        return;
+    }
+    
+    /*if the len of process->cmd is not zero.
+     *  first check if there were duplication of app name. 
+     */
+    for (i = 0; i < process_count; ++i){
+        p = &process_list[i];
+        if(strcmp(p->app_name, process->app_name) == 0){
+            sprintf(response, "duplicated name of app, change the name of %s", process->app_name);
+            return;
+        }
+    }
+
+    /*then, fork the app process.*/
     pid = fork();
     if(pid < 0){
         fprintf(stderr, "can not fork(), error: %s", strerror(errno));
@@ -292,8 +347,7 @@ void server_start_process(process_s *process, char* response)
         process->pid = pid;
         process_list[process_count] = *process;
         process_count++;
-        printf("Starting %s with pid:%d",process->app_name, process->pid);
-        strcpy(response, "start success");
+        sprintf(response, "Starting %s with pid:%d",process->app_name, process->pid);
         save_process_list(config_path, process_list);
         pthread_mutex_unlock(&process_list_mutex);
     }
@@ -402,7 +456,8 @@ void get_process_list_status(char *buffer)
     int res;
     res = create_process_list_json_str(process_list, process_count, buffer);
     if(res == -1){
-        buffer = NULL;
+        /*set response buffer empty.*/
+        memset(buffer, '\0', sizeof(buffer));
     }
 }
 

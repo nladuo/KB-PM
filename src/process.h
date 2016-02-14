@@ -36,10 +36,10 @@ extern void kill_process(process_s* process, int* res);
 /*get the process runtime arguments.*/
 extern void get_process_status(process_s* process, status_s* status);
 
-/*read json_str from path, and parse it to process_list.*/
+/*read json_str from path, parse it to process_list, and return the size of process_list.*/
 extern int parse_process_list_from_path(const char *path, process_s process_list[]);
 
-/*parse the json_str to process_list.*/
+/*parse the json_str to process_list, and return the size of process_list.*/
 extern int parse_process_list(process_s process_list[], char* json_str);
 
 /*parse the json_str to process.*/

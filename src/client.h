@@ -11,8 +11,10 @@
 #define BUFFER_SIZE 40 * 1024
 #endif /*BUFFER_SIZE*/
 
-/*call request to start a process by cmd.*/
-extern void start_process(const char *cmd);
+/*call request to start a process by app_name or cmd.*/
+extern void start_process(const char *app_name_or_cmd);
+
+extern void restart_process(const char *app_name);
 
 /*call request to stop a process by app name.*/
 extern void stop_process(const char *app_name);

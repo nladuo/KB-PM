@@ -11,7 +11,13 @@
 
 int parse_process_cJSON(process_s *process, cJSON *p_json);
 
+int parse_process_cJSON_with_status(process_s *process, cJSON *p_json);
+
 void create_process_cJSON(process_s *process, cJSON* p_json);
+
+void create_process_cJSON_with_status(process_s *process, cJSON* p_json);
+
+void get_mem_by_pid(pid_t pid, char* memory);
 
 /*execute a process*/
 void exec_process(process_s *process, int* res)
@@ -68,6 +74,7 @@ int del_process_by_app_name(process_s process_list[], char* app_name)
     }
     /* remove the process */
     for(i = index; i < count; i++){
+        process_list[i + 1].id--;
         process_list[i] = process_list[i + 1];
     }
 
@@ -86,11 +93,13 @@ void save_process_list(const char* path, process_s process_list[])
     get_process_list_count(process_list, &count);
     create_process_list_json_str(process_list, count, buffer);
     fprintf(fp, "%s", buffer);
+    fflush(fp);
+    fclose(fp);
 }
 
 
 
-int parse_process_list(process_s process_list[LIST_SIZE], char* json_str)
+int parse_process_list(process_s process_list[], char* json_str)
 {
     cJSON *p_json_array, *p_json;
     process_s *process;
@@ -107,6 +116,32 @@ int parse_process_list(process_s process_list[LIST_SIZE], char* json_str)
         p_json = cJSON_GetArrayItem(p_json_array, i);
         process = &process_list[i];
         res = parse_process_cJSON(process, p_json);
+        if(res == -1){/*if parse err occur, free memory and return*/
+            cJSON_Delete(p_json_array);
+            return -1;
+        }
+    }
+    cJSON_Delete(p_json_array);
+    return size;
+}
+
+int parse_process_list_with_status(process_s process_list[], char* json_str)
+{
+    cJSON *p_json_array, *p_json;
+    process_s *process;
+    int size, res, i;
+    if(NULL == json_str){
+        return -1;
+    }
+    p_json_array = cJSON_Parse(json_str);
+    if(NULL == p_json_array){
+        return -1;
+    }
+    size = cJSON_GetArraySize(p_json_array);
+    for(i = 0; i < size; i++){
+        p_json = cJSON_GetArrayItem(p_json_array, i);
+        process = &process_list[i];
+        res = parse_process_cJSON_with_status(process, p_json);
         if(res == -1){/*if parse err occur, free memory and return*/
             cJSON_Delete(p_json_array);
             return -1;
@@ -155,6 +190,36 @@ int parse_process_cJSON(process_s *process, cJSON *p_json)
     }
     strcpy(process->dir, p_json_item->valuestring);
 
+    /*get is_running*/
+    p_json_item = cJSON_GetObjectItem(p_json, "is_running");
+    if(NULL == p_json_item){
+        return -1;
+    }
+    process->is_running = p_json_item->valueint;
+}
+
+int parse_process_cJSON_with_status(process_s *process, cJSON *p_json)
+{
+
+    /*get app_name*/
+    cJSON* p_json_item = cJSON_GetObjectItem(p_json, "app_name");
+    if(NULL == p_json_item){
+        return -1;
+    }
+    strcpy(process->app_name, p_json_item->valuestring);
+    /*get id*/
+    p_json_item = cJSON_GetObjectItem(p_json, "id");
+    if(NULL == p_json_item){
+        return -1;
+    }
+    process->id = p_json_item->valueint;
+
+    /*get pid*/
+    p_json_item = cJSON_GetObjectItem(p_json, "pid");
+    if(NULL == p_json_item){
+        return -1;
+    }
+    process->pid = p_json_item->valueint;
 
     /*get is_running*/
     p_json_item = cJSON_GetObjectItem(p_json, "is_running");
@@ -162,6 +227,27 @@ int parse_process_cJSON(process_s *process, cJSON *p_json)
         return -1;
     }
     process->is_running = p_json_item->valueint;
+
+    /*get restart_times*/
+    p_json_item = cJSON_GetObjectItem(p_json, "restart_times");
+    if(NULL == p_json_item){
+        return -1;
+    }
+    process->restart_times = p_json_item->valueint;
+
+    /*get start_time*/
+    p_json_item = cJSON_GetObjectItem(p_json, "start_time");
+    if(NULL == p_json_item){
+        return -1;
+    }
+    process->start_time = p_json_item->valueint;
+
+    /*get memory*/
+    p_json_item = cJSON_GetObjectItem(p_json, "memory");
+    if(NULL == p_json_item){
+        return -1;
+    }
+    strcpy(process->memory, p_json_item->valuestring);
 }
 
 int create_process_list_json_str(process_s process_list[LIST_SIZE], int list_count, char* json_str)
@@ -182,6 +268,37 @@ int create_process_list_json_str(process_s process_list[LIST_SIZE], int list_cou
             return -1;
         }
         create_process_cJSON(process, p_json);
+        cJSON_AddItemToArray(p_json_array, p_json);
+    }
+
+    str = cJSON_Print(p_json_array);
+    if(NULL == str){
+        cJSON_Delete(p_json_array);
+        return -1;
+    }
+    strcpy(json_str, str);
+    cJSON_Delete(p_json_array);
+    return 0;
+}
+
+int create_process_list_json_str_with_status(process_s process_list[], int list_count, char* json_str)
+{
+    cJSON *p_json_array, *p_json;
+    process_s *process;
+    char* str;
+    int i;
+    p_json_array = cJSON_CreateArray();
+    if(NULL == p_json_array){
+        return -1;
+    }
+    for(i = 0; i < list_count; i++){
+        process = &process_list[i];
+        p_json = cJSON_CreateObject();
+        if(NULL == p_json){
+            cJSON_Delete(p_json_array);
+            return -1;
+        }
+        create_process_cJSON_with_status(process, p_json);
         cJSON_AddItemToArray(p_json_array, p_json);
     }
 
@@ -223,4 +340,51 @@ void create_process_cJSON(process_s *process, cJSON* p_json)
     cJSON_AddStringToObject(p_json, "cmd", process->cmd);
     cJSON_AddStringToObject(p_json, "dir", process->dir);
     cJSON_AddNumberToObject(p_json, "is_running", process->is_running);
+}
+
+void create_process_cJSON_with_status(process_s *process, cJSON* p_json)
+{
+    cJSON_AddStringToObject(p_json, "app_name", process->app_name);
+    cJSON_AddNumberToObject(p_json, "id", process->id);
+    cJSON_AddNumberToObject(p_json, "pid", process->pid);
+    cJSON_AddNumberToObject(p_json, "restart_times", process->restart_times);
+    cJSON_AddNumberToObject(p_json, "start_time", process->start_time);
+    cJSON_AddNumberToObject(p_json, "is_running", process->is_running);
+    /*get process memory*/
+    if (process->is_running){
+        get_mem_by_pid(process->pid, process->memory);
+        cJSON_AddStringToObject(p_json, "memory", process->memory);
+    }else{
+        cJSON_AddStringToObject(p_json, "memory", "0 B");
+    }
+    
+}
+
+void get_mem_by_pid(pid_t pid, char* memory)
+{
+    FILE *fp;
+    int flag = 0;
+    char buf[STR_BUFFER_SIZE];
+    char path[STR_BUFFER_SIZE];
+    char *p_buf;
+
+    sprintf(path, "/proc/%d/status", pid);
+
+    //strcpy(memory, "1 KB");
+    fp = fopen(path, "r");
+    while(fgets(buf, STR_BUFFER_SIZE, fp) > 0){
+        if (strncmp(buf, "VmHWM:", 6) == 0){
+            flag = 1;
+            buf[strlen(buf)-1] = 0;
+            p_buf = buf;
+            while(!(*p_buf >= '0' && *p_buf <= '9')) p_buf++;
+            strcpy(memory, p_buf);
+            break;
+        }
+    }
+    fclose(fp);
+    if (!flag)
+    {
+        strcpy(memory, "cannot get memory");
+    }
 }

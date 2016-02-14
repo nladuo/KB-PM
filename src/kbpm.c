@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include "server.h"
 #include "client.h"
+#include "kbpm.h"
 
 /*print the usage of kb_pm*/
 void print_usage(void);
 
 int main(int argc, char** argv)
 {
+    int res;
     if(argc == 1){
         print_usage();
         exit(EXIT_SUCCESS);
@@ -29,18 +31,25 @@ int main(int argc, char** argv)
         if(strcmp(argv[1], "status") == 0){
             show_status();
         }
-        printf("arguments error, see usage.\n");
+        fprintf(stderr, "arguments error, see usage.\n");
         print_usage();
         exit(EXIT_FAILURE);
     }
 
     if(argc == 3){
-
         /*service start.*/
         if( (strcmp(argv[1], "service") == 0)
                 &&(strcmp(argv[2], "start") == 0)){
-            printf("Starting the server.\n");
-            service_start();
+            ping_server(&res);
+            if (res != 0)
+            {
+                printf(APP_NAME ": Starting the server.\n");
+                service_start();
+            }else{
+                printf(APP_NAME ": service have been already started.\n");
+                exit(EXIT_SUCCESS);
+            }
+            
         }
 
         /*start a process.*/
@@ -58,12 +67,12 @@ int main(int argc, char** argv)
             remove_process(argv[2]);
         }
 
-        printf("arguments error, see usage.\n");
+        fprintf(stderr, "arguments error, see usage.\n");
         print_usage();
         exit(EXIT_FAILURE);
     }
 
-    printf("too many arguments, see usage.\n");
+    fprintf(stderr, "too many arguments, see usage.\n");
     print_usage();
     exit(EXIT_FAILURE);
 }
@@ -71,11 +80,12 @@ int main(int argc, char** argv)
 void print_usage(void)
 {
     printf(
-        "kbpm: a process manager to make process run forever.\n"
+        APP_NAME ": a process manager to make process run forever.\n"
         "    Usage  :  kbpm [cmd] app\n"
-        "\tservice  start          : start the kbpm service\n"
-        "\tstart    <app_name|cmd> : start the program and run forever\n"
-        "\tstop     <app_name>     : stop the program\n"
-        "\tremove   <arg_name>     : remove the program\n"
+        "\tservice  start               : start the kbpm service\n"
+        "\tstart    <app_name|cmd|id>   : start the program and run forever\n"
+        "\trestart  <app_name|id>       : restart the program\n"
+        "\tstop     <app_name|id>       : stop the program\n"
+        "\tremove   <arg_name|id>       : remove the program\n"
         );
 }

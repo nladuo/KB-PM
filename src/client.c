@@ -8,6 +8,8 @@
 #include <string.h>
 #include "client.h"
 #include "utils.h"
+#include "kbpm.h"
+#include "box_drawing.h"
 
 /*send signal to server and get the result back*/
 void communicate_with_server(const char* sig, int* res, char* buffer);
@@ -44,11 +46,11 @@ void start_process(const char *app_name_or_cmd)
 
         communicate_two_signals_with_server("start", sig, &res, buffer);
         if(res != 0){
-            printf("%s\n", "server error occur");
+            fprintf(stderr, "%s\n", "server error occur");
             exit(EXIT_FAILURE);
         }
-        printf("result : %s\n", buffer);
-        
+        printf(APP_NAME ": %s\n", buffer);
+        show_status();
         exit(EXIT_SUCCESS);
     }
 
@@ -80,8 +82,8 @@ void start_process(const char *app_name_or_cmd)
         printf("%s\n", "server error occur");
         exit(EXIT_FAILURE);
     }
-    printf("result : %s\n", buffer);
-
+    printf(APP_NAME ": %s\n", buffer);
+    show_status();
     exit(EXIT_SUCCESS);
 }
 
@@ -107,8 +109,8 @@ void stop_process(const char *app_name)
         printf("%s\n", "server error occur");
         exit(EXIT_FAILURE);
     }
-    printf("result : %s\n", buffer);
-
+    printf(APP_NAME ": %s\n", buffer);
+    show_status();
     exit(EXIT_SUCCESS);
 }
 
@@ -125,7 +127,7 @@ void remove_process(const char* app_name)
 
     communicate_two_signals_with_server("remove", (char *)app_name, &res, buffer);
     if(res != 0){
-        printf("%s\n", "server error occur");
+        fprintf(stderr, "%s\n", "Error: server error occur");
         exit(EXIT_FAILURE);
     }
     printf("result : %s\n", buffer);
@@ -146,7 +148,7 @@ void start_all(void)
 
     communicate_with_server("startall", &res, buffer);
     if(res != 0){
-        printf("%s\n", "server error occur");
+        fprintf(stderr, "%s\n", "server error occur");
         exit(EXIT_FAILURE);
     }
     printf("result : %s\n", buffer);
@@ -167,7 +169,7 @@ void stop_all(void)
 
     communicate_with_server("stopall", &res, buffer);
     if(res != 0){
-        printf("%s\n", "server error occur");
+        fprintf(stderr, "%s\n", "server error occur");
         exit(EXIT_FAILURE);
     }
     printf("result : %s\n", buffer);
@@ -191,16 +193,12 @@ void show_status(void)
 
     communicate_with_server("status", &res, buffer);
     if(res != 0){
-        printf("%s\n", "server error occur");
+        fprintf(stderr, "%s\n", "server error occur");
         exit(EXIT_FAILURE);
     }
     //printf("result : %s\n", buffer);
-    count = parse_process_list(process_list, buffer);
-    printf("app_name\tdir\tcmd\trunning\n");
-    for (i = 0; i < count; ++i){
-        process = &process_list[i];
-        printf("%s\t%s\t%s\t%d\n", process->app_name, process->dir, process->cmd, process->is_running);
-    }
+    count = parse_process_list_with_status(process_list, buffer);
+    print_process_list_box(process_list, count);
     exit(EXIT_SUCCESS);
 }
 
@@ -236,7 +234,7 @@ void communicate_with_server(const char* sig, int* res, char* buffer)
 
     *res = connect(sockfd, (struct sockaddr*)&addr, len);
     if(*res == -1){
-        perror("socket err:");
+        //perror("socket err:");
         return;
     }
 
@@ -261,7 +259,7 @@ void communicate_two_signals_with_server(char* sig1, char* sig2, int* res, char*
 
     *res = connect(sockfd, (struct sockaddr*)&addr, len);
     if(*res == -1){
-        perror("socket err:");
+        //perror("socket err:");
         return;
     }
     write(sockfd, sig1, strlen(sig1));

@@ -14,6 +14,7 @@
 #include <semaphore.h>
 #include <signal.h>
 #include "server.h"
+#include "kbpm.h"
 
 /*daemonize the process*/
 void init_daemon(void);
@@ -29,6 +30,9 @@ void create_config_file();
 
 /*start a process and listening its exit.*/
 void server_start_process(process_s *process, char* response);
+
+/*restart a process that server listening.*/
+void server_restart_process(process_s *process, char* response);
 
 /*stop a process that server listening.*/
 void server_stop_process(process_s *process, char* response);
@@ -85,7 +89,7 @@ void service_start(void)
     }
 
     /*daemonize the process*/
-    //init_daemon();
+    init_daemon();
 
     /*init mutex*/
     res = pthread_mutex_init(&process_list_mutex, NULL);
@@ -104,6 +108,7 @@ void service_start(void)
     /*exec the processes*/
     for(i = 0; i < process_count; i++){
         process = &process_list[i];
+        process->id = i;
         if(!process->is_running){
             continue;
         }
@@ -118,19 +123,20 @@ void service_start(void)
             exit(EXIT_FAILURE);
         }else{
             process->pid = pid;
-            process->status.restart_times = 0;
-            printf("Starting %s with pid:%d",process->app_name, process->pid);
+            time(&process->start_time);
+            process->restart_times = 0;
+            //printf("Starting %s with pid:%d",process->app_name, process->pid);
         }
     }
 
     /*listening the child process exit.*/
     while(1){
         if(!process_count || !get_running_process_count()){
-            usleep(100 * 1000);//sleep 100 ms
+            usleep(100 * 1000);/*sleep 100 ms*/
         }
         pid = wait(NULL);
-        printf("pid: %d be killed\n", pid);
         pthread_mutex_lock(&process_list_mutex);
+        //printf("pid: %d be killed\n", pid);
         for(i = 0; i < process_count; i++){
             process = &process_list[i];
             if(process->pid == pid){
@@ -148,8 +154,9 @@ void service_start(void)
                     exit(EXIT_FAILURE);
                 }else{
                     process->pid = pid;
-                    process->status.restart_times++;
-                    printf("Restart app: %s dir:%s cmd:%s \n", process->app_name,process->dir, process->cmd);
+                    process->restart_times++;
+                    time(&process->start_time);
+                    //printf("Restart app: %s dir:%s cmd:%s \n", process->app_name,process->dir, process->cmd);
                     break;
                 }
             }
@@ -264,6 +271,7 @@ GO_ON:
         close(client_sockfd);
         memset(buffer, '\0', sizeof(buffer));
         memset(response, '\0', sizeof(response));
+        //usleep(100 * 1000);/*sleep 100 ms*/
     }
 }
 
@@ -288,18 +296,17 @@ void server_start_process(process_s *process, char* response)
                 break;
             }
         }
-        if (!flag)
-        {
-            sprintf(response, "cannot find a app named %s\n", process->app_name);
+        if (!flag){
+            sprintf(response, "cannot find a app named %s.", process->app_name);
             return;
         }
         if (p->is_running){
-            sprintf(response, "%s have already been running\n", process->app_name);
+            sprintf(response, "%s have already been running.", process->app_name);
         }else{
             /*start the process*/
             pid = fork();
             if(pid < 0){
-                fprintf(stderr, "can not fork(), error: %s", strerror(errno));
+                fprintf(stderr, "cannot fork(), error: %s", strerror(errno));
                 exit(EXIT_FAILURE);
             }else if(pid == 0){/*the child process*/
                 ignore_signals();
@@ -311,6 +318,7 @@ void server_start_process(process_s *process, char* response)
                 pthread_mutex_lock(&process_list_mutex);
                 p->pid = pid;
                 p->is_running = 1;
+                time(&p->start_time);
                 sprintf(response, "Starting %s with pid:%d",p->app_name, p->pid);
                 save_process_list(config_path, process_list);
                 pthread_mutex_unlock(&process_list_mutex);
@@ -333,7 +341,7 @@ void server_start_process(process_s *process, char* response)
     /*then, fork the app process.*/
     pid = fork();
     if(pid < 0){
-        fprintf(stderr, "can not fork(), error: %s", strerror(errno));
+        fprintf(stderr, "cannot fork(), error: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }else if(pid == 0){/*the child process*/
         ignore_signals();
@@ -345,12 +353,19 @@ void server_start_process(process_s *process, char* response)
         pthread_mutex_lock(&process_list_mutex);
         /*add process to process_list tail.*/
         process->pid = pid;
+        process->id = process_count;
+        time(&process->start_time);
         process_list[process_count] = *process;
         process_count++;
         sprintf(response, "Starting %s with pid:%d",process->app_name, process->pid);
         save_process_list(config_path, process_list);
         pthread_mutex_unlock(&process_list_mutex);
     }
+}
+
+void server_restart_process(process_s *process, char* response)
+{
+
 }
 
 void server_stop_process(process_s *process, char* response)
@@ -363,12 +378,14 @@ void server_stop_process(process_s *process, char* response)
     pthread_mutex_lock(&process_list_mutex);
     if(process->is_running){
         process->is_running = 0;
-        process->status.restart_times = 0;
+        process->restart_times = 0;
         kill_process(process, &res);
         process->pid = 0;
-        strcpy(response, "stop success.");
+        process->start_time = 0;
+        save_process_list(config_path, process_list);
+        sprintf(response, "stop %s success", process->app_name);
     }else{
-        strcpy(response, "the process is not running.");
+        sprintf(response, "the %s is not running.", process->app_name);
     }
     pthread_mutex_unlock(&process_list_mutex);
 }
@@ -385,7 +402,7 @@ void server_remove_process(process_s *process, char* response)
     if(process->is_running){
         kill_process(process, &res);
         process->pid = 0;
-        process->status.restart_times = 0;
+        process->restart_times = 0;
     }
     del_process_by_app_name(process_list, process->app_name);
     process_count--;
@@ -420,8 +437,8 @@ void server_start_all_process(void)
             exit(EXIT_FAILURE);
         }else{
             process->pid = pid;
-            process->status.restart_times = 0;
-            printf("Starting %s with pid:%d",process->app_name, process->pid);
+            process->restart_times = 0;
+            //printf("Starting %s with pid:%d",process->app_name, process->pid);
         }
     }
     save_process_list(config_path, process_list);
@@ -441,7 +458,7 @@ void server_stop_all_process(void)
     for(i = 0; i < process_count; i++){
         process = &process_list[i];
         if(process->is_running){
-            process->status.restart_times = 0;
+            process->restart_times = 0;
             process->is_running = 0;
             kill_process(process, &res);
             process->pid = 0;
@@ -454,7 +471,7 @@ void server_stop_all_process(void)
 void get_process_list_status(char *buffer)
 {
     int res;
-    res = create_process_list_json_str(process_list, process_count, buffer);
+    res = create_process_list_json_str_with_status(process_list, process_count, buffer);
     if(res == -1){
         /*set response buffer empty.*/
         memset(buffer, '\0', sizeof(buffer));
@@ -466,8 +483,7 @@ void create_config_file(void)
     int status;
     char *home_dir;
     home_dir = getenv("HOME");
-    if (!home_dir)
-    {
+    if (!home_dir){
         fprintf(stderr, "You have to set the env:$HOME\n");
         exit(EXIT_FAILURE);
     }

@@ -227,7 +227,7 @@ void *server_socket_handle_func(void *args)
             /*command status*/
             get_process_list_status(response);
         }else if(strcmp(buffer, "start") == 0){
-            /*command start <app_name|cmd>*/
+            /*command start <app_name|cmd|id>*/
             write(client_sockfd, "pong", strlen("pong"));
             memset(buffer, '\0', sizeof(buffer));
             read(client_sockfd, buffer, STR_BUFFER_SIZE);
@@ -239,7 +239,7 @@ void *server_socket_handle_func(void *args)
             }
             server_start_process(&process, response);
         }else if(strncmp(buffer, "stop", strlen("stop")) == 0){
-            /*command stop <app_name>*/
+            /*command stop <app_name|id>*/
             write(client_sockfd, "pong", strlen("pong"));
             memset(buffer, '\0', sizeof(buffer));
             /*get the appname*/
@@ -252,14 +252,49 @@ void *server_socket_handle_func(void *args)
                 }
             }
             if(!flag){/*flag == 0*/
-                strcpy(response, "cannot find the process named:");
-                strcat(response, buffer);
+                sprintf(response, "cannot find an app named:%s", buffer);
                 write(client_sockfd, response, strlen(response));
                 goto GO_ON;
             }
             server_stop_process(&process_list[i], response);
+        }else if(strncmp(buffer, "restart", strlen("restart")) == 0){
+            /*command restart <app_name|id>*/
+            write(client_sockfd, "pong", strlen("pong"));
+            memset(buffer, '\0', sizeof(buffer));
+            /*get the appname*/
+            read(client_sockfd, buffer, STR_BUFFER_SIZE);
+            flag = 0;
+            for(i = 0; i < process_count; i++){
+                if(strcmp(process_list[i].app_name, buffer) == 0){
+                    flag = 1;
+                    break;
+                }
+            }
+            if(!flag){/*flag == 0*/
+                sprintf(response, "cannot find an app named:%s", buffer);
+                write(client_sockfd, response, strlen(response));
+                goto GO_ON;
+            }
+            server_restart_process(&process_list[i], response);
         }else if(strncmp(buffer, "remove", strlen("remove")) == 0){
             /*command remove <app_name|app_id>*/
+            write(client_sockfd, "pong", strlen("pong"));
+            memset(buffer, '\0', sizeof(buffer));
+            /*get the appname*/
+            read(client_sockfd, buffer, STR_BUFFER_SIZE);
+            flag = 0;
+            for(i = 0; i < process_count; i++){
+                if(strcmp(process_list[i].app_name, buffer) == 0){
+                    flag = 1;
+                    break;
+                }
+            }
+            if(!flag){/*flag == 0*/
+                sprintf(response, "cannot find an app named:%s", buffer);
+                write(client_sockfd, response, strlen(response));
+                goto GO_ON;
+            }
+            server_remove_process(&process_list[i], response);
 
         }else if(strcmp(buffer, "ping") == 0){
             strcpy(response, "pong");
@@ -297,7 +332,7 @@ void server_start_process(process_s *process, char* response)
             }
         }
         if (!flag){
-            sprintf(response, "cannot find a app named %s.", process->app_name);
+            sprintf(response, "cannot find an app named %s.", process->app_name);
             return;
         }
         if (p->is_running){
@@ -357,7 +392,7 @@ void server_start_process(process_s *process, char* response)
         time(&process->start_time);
         process_list[process_count] = *process;
         process_count++;
-        sprintf(response, "Starting %s with pid:%d",process->app_name, process->pid);
+        sprintf(response, "Started %s with pid:%d",process->app_name, process->pid);
         save_process_list(config_path, process_list);
         pthread_mutex_unlock(&process_list_mutex);
     }
@@ -365,7 +400,46 @@ void server_start_process(process_s *process, char* response)
 
 void server_restart_process(process_s *process, char* response)
 {
+    int res;
+    pid_t pid;
+    char config_path[STR_BUFFER_SIZE];
+    /*get config path according to $HOME*/
+    strcpy(config_path, getenv("HOME"));
+    strcat(config_path, CONFIG_PATH);
+    pthread_mutex_lock(&process_list_mutex);
+    if(process->is_running){
+        /*first:stop the process*/
+        process->is_running = 0;
+        kill_process(process, &res);
+        process->pid = 0;
+        process->start_time = 0;
+        save_process_list(config_path, process_list);
+        sprintf(response, "stop %s success", process->app_name);
 
+        /*second:start the process*/
+        pid = fork();
+        if(pid < 0){
+            fprintf(stderr, "cannot fork(), error: %s", strerror(errno));
+            exit(EXIT_FAILURE);
+        }else if(pid == 0){/*the child process*/
+            ignore_signals();
+            /*exec the child process.*/
+            exec_process(process, &res);
+            perror("exit error:");
+            exit(EXIT_FAILURE);
+        }else{/*the parent process*/
+            process->pid = pid;
+            process->is_running = 1;
+            time(&process->start_time);
+            process->restart_times++;
+            sprintf(response, "Restarted %s with pid:%d",process->app_name, process->pid);
+            save_process_list(config_path, process_list);
+        }
+
+    }else{
+        sprintf(response, "the %s is not running.", process->app_name);
+    }
+    pthread_mutex_unlock(&process_list_mutex);
 }
 
 void server_stop_process(process_s *process, char* response)
@@ -404,6 +478,7 @@ void server_remove_process(process_s *process, char* response)
         process->pid = 0;
         process->restart_times = 0;
     }
+    sprintf(response, "Remove %s success.", process->app_name);
     del_process_by_app_name(process_list, process->app_name);
     process_count--;
     save_process_list(config_path, process_list);

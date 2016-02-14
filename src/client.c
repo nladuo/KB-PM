@@ -89,8 +89,23 @@ void start_process(const char *app_name_or_cmd)
 
 void restart_process(const char *app_name)
 {
+    int res;
+    char buffer[BUFFER_SIZE];
+    /*check if the server is online.*/
+    ping_server(&res);
+    if(res != 0){
+        fprintf(stderr, "Error : server is not online.Run 'kbpm service start' to start the kbpm service.\n");
+        exit(EXIT_FAILURE);
+    }
 
-
+    communicate_two_signals_with_server("restart", (char *)app_name, &res, buffer);
+    if(res != 0){
+        printf("%s\n", "server error occur");
+        exit(EXIT_FAILURE);
+    }
+    printf(APP_NAME ": %s\n", buffer);
+    show_status();
+    exit(EXIT_SUCCESS);
 }
 
 void stop_process(const char *app_name)
@@ -130,8 +145,8 @@ void remove_process(const char* app_name)
         fprintf(stderr, "%s\n", "Error: server error occur");
         exit(EXIT_FAILURE);
     }
-    printf("result : %s\n", buffer);
-
+    printf(APP_NAME ": %s\n", buffer);
+    show_status();
     exit(EXIT_SUCCESS);
 }
 

@@ -57,6 +57,11 @@ int main(int argc, char** argv)
             start_process(argv[2]);
         }
 
+        /*restart a process.*/
+        if(strcmp(argv[1], "restart") == 0){
+            restart_process(argv[2]);
+        }
+
         /*stop a process.*/
         if(strcmp(argv[1], "stop") == 0){
             stop_process(argv[2]);

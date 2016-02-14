@@ -31,6 +31,12 @@ int main(int argc, char** argv)
         if(strcmp(argv[1], "status") == 0){
             show_status();
         }
+
+        /*show the version of KB_PM*/
+        if(strcmp(argv[1], "version") == 0){
+            printf(APP_NAME ": %s\n", APP_VERSION);
+            exit(EXIT_SUCCESS);
+        }
         fprintf(stderr, "arguments error, see usage.\n");
         print_usage();
         exit(EXIT_FAILURE);
@@ -87,10 +93,12 @@ void print_usage(void)
     printf(
         APP_NAME ": a process manager to make process run forever.\n"
         "    Usage  :  kbpm [cmd] app\n"
-        "\tservice  start               : start the kbpm service\n"
+        "\tservice  start               : start the KB_PM service\n"
         "\tstart    <app_name|cmd|id>   : start the program and run forever\n"
         "\trestart  <app_name|id>       : restart the program\n"
         "\tstop     <app_name|id>       : stop the program\n"
-        "\tremove   <arg_name|id>       : remove the program\n"
+        "\tstartall                     : start all program(s)\n"
+        "\tstopall                      : stop all the program(s)\n"
+        "\tversion                      : show KB_PM version\n"
         );
 }

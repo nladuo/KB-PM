@@ -166,8 +166,8 @@ void start_all(void)
         fprintf(stderr, "%s\n", "server error occur");
         exit(EXIT_FAILURE);
     }
-    printf("result : %s\n", buffer);
-
+    printf(APP_NAME ": %s\n", buffer);
+    show_status();
     exit(EXIT_SUCCESS);
 }
 
@@ -187,8 +187,8 @@ void stop_all(void)
         fprintf(stderr, "%s\n", "server error occur");
         exit(EXIT_FAILURE);
     }
-    printf("result : %s\n", buffer);
-
+    printf(APP_NAME ": %s\n", buffer);
+    show_status();
     exit(EXIT_SUCCESS);
 }
 

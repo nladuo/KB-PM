@@ -218,11 +218,11 @@ void *server_socket_handle_func(void *args)
         if(strcmp(buffer, "startall") == 0){
             /*command startall*/
             server_start_all_process();
-            strcpy(response, "pong");
+            strcpy(response, "Start All Okay.");
         }else if(strcmp(buffer, "stopall") == 0){
             /*command stopall*/
             server_stop_all_process();
-            strcpy(response, "pong");
+            strcpy(response, "Stop All Okay.");
         }else if(strcmp(buffer, "status") == 0){
             /*command status*/
             get_process_list_status(response);
@@ -513,6 +513,8 @@ void server_start_all_process(void)
         }else{
             process->pid = pid;
             process->restart_times = 0;
+            process->is_running = 1;
+            time(&process->start_time);
             //printf("Starting %s with pid:%d",process->app_name, process->pid);
         }
     }
@@ -537,6 +539,7 @@ void server_stop_all_process(void)
             process->is_running = 0;
             kill_process(process, &res);
             process->pid = 0;
+            process->start_time = 0;
         }
     }
     save_process_list(config_path, process_list);

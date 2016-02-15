@@ -267,7 +267,7 @@ void ping_server(int *result)
         *result = -1;
         return;
     }
-    
+
     if(strcmp(buffer, "pong") != 0)
     {
         *result = -1;

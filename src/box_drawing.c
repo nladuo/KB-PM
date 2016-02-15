@@ -233,7 +233,7 @@ void print_bot_line(int var_strlen_max[])
         {
             print_ch(HL);
         }
-        
+
         if (i == VAR_NUM -1){
             print_ch(RB);
         }
@@ -255,7 +255,7 @@ void print_mid_line(int var_strlen_max[])
         {
             print_ch(HL);
         }
-        
+
         if (i == VAR_NUM -1){
             print_ch(RC);
         }

@@ -187,7 +187,7 @@ void service_start(void)
     /*listening the child process exit.*/
     while(1)
     {
-        /*if no running process, there are no child process, 
+        /*if no running process, there are no child process,
             so wait(NULL) will return -1.*/
         if(!process_count || !get_running_process_count())
         {
@@ -443,7 +443,7 @@ void server_start_process_and_get_response(char *buffer, char* response)
         {
             sprintf(response, "%s have already been running.", process.app_name);
         }
-        
+
         break;
     default:
         get_error_reponse(buffer, response);
@@ -554,7 +554,7 @@ void server_start_process(process_s *process, int with_log)
 {
     int res;
     pid_t pid;
-    
+
     pid = fork();
     if(pid < 0)
     {
@@ -579,7 +579,7 @@ void server_start_process(process_s *process, int with_log)
         if(with_log)
         {
             syslog(LOG_INFO, "Starting %s with pid:%d.",process->app_name, process->pid);
-        } 
+        }
     }
 }
 
@@ -613,14 +613,14 @@ void server_remove_process(process_s *process, char* app_name)
     /*delete the process form list.*/
     del_process_by_app_name(process_list, process->app_name);
     process_count--;
-    
+
 }
 
 void server_start_all_process(void)
 {
     int i;
     process_s *process;
-    
+
     for(i = 0; i < process_count; i++)
     {
         process = &process_list[i];
@@ -683,7 +683,7 @@ void create_config_file(void)
         fprintf(stderr, "You have to set the env:$HOME\n");
         exit(EXIT_FAILURE);
     }
-    
+
     get_config_path(config_path);
     get_config_dir(config_dir);
 

@@ -522,15 +522,15 @@ void server_remove_process_and_get_response(char *buffer, char* response)
     {
     case TYPE_ID:
     case TYPE_APP_NAME:
+        pos = get_pos_in_process_list(&process);
+        server_remove_process(&process_list[pos], app_name);
         if (process.is_running)
         {
-            pos = get_pos_in_process_list(&process);
-            server_remove_process(&process_list[pos], app_name);
             sprintf(response, "Stopped And Removed %s.",app_name);
         }
         else
         {
-            sprintf(response, "%s is not running.", process.app_name);
+            sprintf(response, "Removed %s.", app_name);
         }
         break;
     default:
@@ -610,7 +610,6 @@ void server_remove_process(process_s *process, char* app_name)
     syslog(LOG_INFO, "Removing %s.",process->app_name);
 
     strcpy(app_name, process->app_name);
-    
     /*delete the process form list.*/
     del_process_by_app_name(process_list, process->app_name);
     process_count--;

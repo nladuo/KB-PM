@@ -68,7 +68,6 @@ int main(int argc, char** argv)
             exit(EXIT_SUCCESS);
         }
         fprintf(stderr, APP_NAME ": Arguments error, see usage.\n");
-        print_usage();
         exit(EXIT_FAILURE);
     }
 
@@ -125,12 +124,10 @@ int main(int argc, char** argv)
         }
 
         fprintf(stderr, APP_NAME ": Arguments error, see usage.\n");
-        print_usage();
         exit(EXIT_FAILURE);
     }
 
     fprintf(stderr, APP_NAME ": Too many arguments, see usage.\n");
-    print_usage();
     exit(EXIT_FAILURE);
 }
 
@@ -144,6 +141,7 @@ void print_usage(void)
         "       start    <file|app_name|id>   start the program and run forever\n"
         "       restart  <app_name|id>        restart the program\n"
         "       stop     <app_name|id>        stop the program\n"
+        "       remove   <app_name|id>        remove the program form list\n"
         "       startall                      start all program(s)\n"
         "       stopall                       stop all the program(s)\n"
         "       version                       show KB_PM version\n"

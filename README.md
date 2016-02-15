@@ -9,7 +9,7 @@ a CLI tool (like supervisor and pm2) keep a group of programs running continuous
 git clone https://github.com/nladuo/KB-PM.git
 cd KB-PM && make && sudo make install
 ```
-## Usage
+## Example
 ``` shell
 kbpm service start              # start the KB_PM service
 chmod +x ./bin/test.sh          # make test.sh executeable

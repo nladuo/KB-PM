@@ -222,7 +222,7 @@ void service_start(void)
 /*delete the /tmp/kbpm.sock is okay.*/
 void service_clean(void)
 {
-    unlink(LOCAL_SOCKET_NAME);
+    unlink(LOCAL_SOCKET_FILE);
     exit(EXIT_SUCCESS);
 }
 
@@ -239,12 +239,12 @@ void *server_socket_handle_func(void *args)
     get_config_path(config_path);
 
     /*delete the former sock file.*/
-    unlink(LOCAL_SOCKET_NAME);
+    unlink(LOCAL_SOCKET_FILE);
 
     /*create socket.*/
     server_sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     server_addr.sun_family = AF_UNIX;
-    strcpy(server_addr.sun_path, LOCAL_SOCKET_NAME);
+    strcpy(server_addr.sun_path, LOCAL_SOCKET_FILE);
     server_len = sizeof(server_addr);
 
     /*bind and listen.*/
@@ -560,7 +560,7 @@ void server_start_process(process_s *process, int with_log)
     {
         syslog(LOG_ERR, "cannot fork(), error: %s", strerror(errno));
         syslog(LOG_ERR, "server unexpected exit.");
-        unlink(LOCAL_SOCKET_NAME);
+        unlink(LOCAL_SOCKET_FILE);
         exit(EXIT_FAILURE);
     }
     else if(pid == 0)/*the child process*/

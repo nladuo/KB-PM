@@ -31,9 +31,9 @@
 /*config_dir would be ~/.kbpm */
 #define CONFIG_DIR  "/.kbpm"
 
-#ifndef LOCAL_SOCKET_NAME
-#define LOCAL_SOCKET_NAME "/tmp/kbpm.sock"
-#endif /*LOCAL_SOCKET_NAME*/
+#ifndef LOCAL_SOCKET_FILE
+#define LOCAL_SOCKET_FILE "/tmp/kbpm.sock"
+#endif /*LOCAL_SOCKET_FILE*/
 
 #ifndef STR_BUFFER_SIZE
 #define STR_BUFFER_SIZE 4 * 1024

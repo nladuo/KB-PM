@@ -358,7 +358,7 @@ int get_process_id(char *buffer)
     if (isNumber(buffer))
     {
         id = atoi((const char*)buffer);
-        syslog(LOG_INFO, "id --> %d.",id);
+        /*syslog(LOG_INFO, "id --> %d.",id);*/
         if (id >= 0 && id < process_count)
         {
             return id;

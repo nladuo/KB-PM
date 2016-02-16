@@ -13,7 +13,7 @@ cd KB-PM && make && sudo make install
 ``` shell
 kbpm service start              # start the KB_PM service
 chmod +x ./bin/test.sh          # make test.sh executeable
-kbpm start ./bin/test.sh        # execute test.sh
+kbpm start ./bin/test.sh        # execute test.sh, use absolute path or relative path
 tail -f test.log                # check out the stdout of test.sh
 ```
 

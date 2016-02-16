@@ -421,14 +421,25 @@ void get_error_reponse(char *buffer, char *response)
 
 void server_start_process_and_get_response(char *buffer, char* response)
 {
+    int i;
     int type;
     int pos;
     process_s process;
 
     type = parse_process_and_process_type(buffer, &process);
+    
     switch(type)
     {
     case TYPE_CMD:
+        /*check out duplication of app_name*/
+        for (i = 0; i < process_count; i++)
+        {
+            if (strcmp(process.app_name, process_list[i].app_name) == 0)
+            {
+                sprintf(response, "Duplicated name : %s. Please rename the program.", process.app_name);
+                return;
+            }
+        }
         server_start_process_with_cmd(&process, response);
         break;
     case TYPE_ID:
@@ -542,7 +553,6 @@ void server_remove_process_and_get_response(char *buffer, char* response)
 void server_start_process_with_cmd(process_s *process, char* response)
 {
     server_start_process(process, 1);
-
     /*add process at tail of process_list*/
     process->id = process_count;
     process_list[process_count] = *process;
@@ -593,6 +603,7 @@ void server_stop_process(process_s *process)
         kill_process(process, &res);
         process->pid = 0;
         process->start_time = 0;
+        process->restart_times = 0;
         syslog(LOG_INFO, "Stopping %s.",process->app_name);
     }
 }
@@ -643,7 +654,6 @@ void server_stop_all_process(void)
         if(process->is_running)
         {
             server_stop_process(process);
-            process->restart_times = 0;
         }
     }
 }

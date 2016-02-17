@@ -8,7 +8,6 @@ a CLI tool (like supervisor and pm2) keep a group of programs running continuous
 ``` shell
 git clone https://github.com/nladuo/KB-PM.git
 cd KB-PM
-./configure
 make
 sudo make install
 ```

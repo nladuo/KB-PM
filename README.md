@@ -7,15 +7,15 @@ a CLI tool (like supervisor and pm2) keep a group of programs running continuous
 ## Installation
 ``` shell
 git clone https://github.com/nladuo/KB-PM.git
-cd KB-PM
-make
-sudo make install
+cd KB-PM/build
+cmake .                          # generate Makefile by cmake
+make && sudo make install
 ```
 ## Example
 ``` shell
 kbpm service start               # start the KB_PM service
-chmod +x ./test/test.sh          # make test.sh executeable
-kbpm start ./test/test.sh        # execute test.sh, use absolute path or relative path
+chmod +x ../test/test.sh         # make test.sh executeable
+kbpm start ../test/test.sh       # execute test.sh, use absolute path or relative path
 tail -f test.log                 # check out the stdout of test.sh
 ```
 ## Log

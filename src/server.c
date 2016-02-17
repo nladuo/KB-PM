@@ -63,7 +63,7 @@ void get_config_path(char* config_path);
 void get_config_dir(char* config_dir);
 
 /*check out if the buffer is number.*/
-int isNumber(char *buffer);
+int is_number(char *buffer);
 
 /*get the process id by checkout buffer is number and in the range of processlist*/
 int get_process_id(char *buffer);
@@ -339,7 +339,7 @@ void get_config_dir(char* config_dir)
     sprintf(config_dir, "%s%s", getenv("HOME"), CONFIG_DIR);
 }
 
-int isNumber(char *buffer)
+int is_number(char *buffer)
 {
     int i;
     for (i = 0; i < strlen(buffer); i++)
@@ -355,7 +355,7 @@ int isNumber(char *buffer)
 int get_process_id(char *buffer)
 {
     int id;
-    if (isNumber(buffer))
+    if (is_number(buffer))
     {
         id = atoi((const char*)buffer);
         /*syslog(LOG_INFO, "id --> %d.",id);*/
@@ -409,7 +409,7 @@ int get_pos_in_process_list(process_s *process)
 
 void get_error_reponse(char *buffer, char *response)
 {
-    if(isNumber(buffer))
+    if(is_number(buffer))
     {
         sprintf(response, "Cannot find id = %s", buffer);
     }
@@ -585,6 +585,7 @@ void server_start_process(process_s *process, int with_log)
     {
         process->pid = pid;
         process->is_running = 1;
+        process->restart_times = 0;
         time(&process->start_time);
         if(with_log)
         {

@@ -30,7 +30,7 @@
 #include "kbpm.h"
 
 /*print the usage of kb_pm*/
-void print_usage(void);
+int print_usage(void);
 
 int main(int argc, char** argv)
 {
@@ -131,9 +131,9 @@ int main(int argc, char** argv)
     exit(EXIT_FAILURE);
 }
 
-void print_usage(void)
+int print_usage(void)
 {
-    printf(
+    return printf(
         APP_NAME ": a CLI tool (like supervisor and pm2) keep a group of program running continuously.\n"
         "   Usage  :  kbpm [cmd] app\n"
         "       service  start                start the KB_PM service\n"

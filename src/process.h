@@ -22,8 +22,8 @@
   SOFTWARE.
 */
 
-#ifndef __PROCESS_H
-#define __PROCESS_H
+#ifndef KBPM_PROCESS_H
+#define KBPM_PROCESS_H
 
 #ifndef STR_BUFFER_SIZE
 #define STR_BUFFER_SIZE  512
@@ -85,4 +85,4 @@ extern int del_process_by_app_name(process_s process_list[], char* app_name);
 /*save the process in file.*/
 extern void save_process_list(const char* path, process_s process_list[]);
 
-#endif /*__PROCESS_H*/
+#endif /*KBPM_PROCESS_H*/

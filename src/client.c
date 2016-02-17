@@ -33,7 +33,7 @@
 #include "client.h"
 #include "utils.h"
 #include "kbpm.h"
-#include "box_drawing.h"
+#include "ansi_escape.h"
 
 /*show that KB_PM server is not starting*/
 #define PRINT_NOT_ONLINE fprintf(stderr, \

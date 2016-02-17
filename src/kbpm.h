@@ -22,7 +22,12 @@
   SOFTWARE.
 */
 
-#include "box_drawing.h"
+#ifndef KBPM_MAIN_H
+#define KBPM_MAIN_H
+
+#include "ansi_escape.h"
 
 #define APP_NAME        ANSI_COLOR_GREEN "[KB_PM]" ANSI_COLOR_RESET
-#define APP_VERSION     "v0.1.0" 
+#define APP_VERSION     "v0.1.0"
+
+#endif /*KBPM_MAIN_H*/

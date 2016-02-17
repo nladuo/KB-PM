@@ -23,8 +23,8 @@
   SOFTWARE.
 */
 
-#ifndef __CLIENT_H
-#define __CLIENT_H
+#ifndef KBPM_CLIENT_H
+#define KBPM_CLIENT_H
 
 #include "process.h"
 
@@ -55,4 +55,4 @@ extern void show_status(void);
 
 extern void ping_server(int* res);
 
-#endif /*__CLIENT_H*/
+#endif /*KBPM_CLIENT_H*/

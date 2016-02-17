@@ -27,6 +27,7 @@
 #include <string.h>
 #include <time.h>
 #include "box_drawing.h"
+#include "ansi_escape.h"
 
 /*get the columns of strlen maximum */
 void get_varible_strlen_max(int var_strlen_max[], char box_line_list[][VAR_NUM][STR_BUFFER_SIZE], int list_count);

@@ -22,8 +22,8 @@
   SOFTWARE.
 */
 
-#ifndef __SERVER_H
-#define __SERVER_H
+#ifndef KBPM_SERVER_H
+#define KBPM_SERVER_H
 
 #define SERVER_ACCEPT_COUNT 5
 /*config_path would be ~/.kbpm/process_list.json*/
@@ -55,4 +55,4 @@ extern void service_start(void);
 /*resolve the KB_PM service unexpectedly exit.*/
 extern void service_clean(void);
 
-#endif /*__SERVER_H*/
+#endif /*KBPM_SERVER_H*/

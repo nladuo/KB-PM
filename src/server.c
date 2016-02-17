@@ -139,6 +139,7 @@ void service_start(void)
     process_s *process;
     pthread_t socket_server_thread;
     char config_path[STR_BUFFER_SIZE];
+    time_t time_now;
 
     /*if first run the program, the config file will be not exist, create it.*/
     create_config_file();
@@ -209,6 +210,16 @@ void service_start(void)
                 {
                     break;
                 }
+                time(&time_now);
+                /*if a program restart interval less than 1 second.*/
+                if (process->start_time == time_now)
+                {
+                    process->is_running = 0;
+                    process->pid = 0;
+                    syslog(LOG_INFO, "The App(%s) stopped too quickly. KB_PM service stop it automatically.",process->app_name);
+                    break;
+                }
+
                 server_start_process(process, 0);/*without syslog*/
                 process->restart_times++;
                 syslog(LOG_INFO, "Restarting %s with pid:%d",process->app_name, process->pid);
@@ -427,7 +438,7 @@ void server_start_process_and_get_response(char *buffer, char* response)
     process_s process;
 
     type = parse_process_and_process_type(buffer, &process);
-    
+
     switch(type)
     {
     case TYPE_CMD:

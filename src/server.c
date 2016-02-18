@@ -526,8 +526,6 @@ void server_restart_process_and_get_response(char *buffer, char* response)
     }
 }
 
-
-
 void server_remove_process_and_get_response(char *buffer, char* response)
 {
     int type;

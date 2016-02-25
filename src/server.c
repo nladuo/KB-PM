@@ -44,7 +44,7 @@ void init_daemon(void);
 void ignore_signals(void);
 
 /*handle the client request*/
-void *server_socket_handle_func(void *);
+void *server_socket_handle_thread_func(void *);
 
 /*if the "~/.kbpm/process.config" does not exsit, create it.*/
 void create_config_file();
@@ -161,7 +161,7 @@ void service_start(void)
     }
 
     /*create thread to handle client request*/
-    res = pthread_create(&socket_server_thread, NULL, server_socket_handle_func, NULL);
+    res = pthread_create(&socket_server_thread, NULL, server_socket_handle_thread_func, NULL);
     if(res != 0)
     {
         syslog(LOG_ERR, "Thread creating failed, error: %s", strerror(errno));
@@ -234,7 +234,7 @@ void service_clean(void)
 }
 
 /*a new thread that handle client msg*/
-void *server_socket_handle_func(void *args)
+void *server_socket_handle_thread_func(void *args)
 {
     int server_sockfd, client_sockfd;
     struct sockaddr_un server_addr, client_addr;

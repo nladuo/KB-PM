@@ -18,10 +18,10 @@ endif()
 find_library(M_LIB m)
 target_link_libraries(kbpm ${M_LIB})
 
-install(PROGRAMS kbpm  DESTINATION /usr/local/bin)
+set(CMAKE_INSTALL_PREFIX /usr/local)
+install(PROGRAMS kbpm  DESTINATION bin)
 
-set(CPACK_GENERATOR "DEB")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Kalen Blue")
-set(CPACK_PACKAGE_VERSION "0.1.0")
- 
-include(CPack)
+# set(CPACK_GENERATOR "DEB")
+# set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Kalen Blue")
+# set(CPACK_PACKAGE_VERSION "0.1.0")
+# include(CPack)

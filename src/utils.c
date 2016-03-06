@@ -38,3 +38,17 @@ int str_split(char dst[][STR_BUFFER_SIZE], char* str, const char* spl)
     }
     return n;
 }
+
+/*check out if the buffer is number.*/
+int is_number(char *buffer)
+{
+    int i;
+    for (i = 0; i < strlen(buffer); i++)
+    {
+        if (!(buffer[i] <= '9' && buffer[i] >= '0'))
+        {
+            return 0;
+        }
+    }
+    return 1;
+}

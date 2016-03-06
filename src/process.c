@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <string.h>
 #include "process.h"
+#include "proc_status.h"
 #include "../lib/cJSON.h"
 
 int parse_process_cJSON(process_s *process, cJSON *p_json);
@@ -43,6 +44,8 @@ void create_process_cJSON_with_status(process_s *process, cJSON* p_json);
 
 void get_mem_by_pid(pid_t pid, char* memory);
 
+void kill_process_by_pid(pid_t pid);
+
 /*execute a process*/
 void exec_process(process_s *process, int* res)
 {
@@ -53,9 +56,25 @@ void exec_process(process_s *process, int* res)
 /*kill a process*/
 void kill_process(process_s *process, int* res)
 {
-    *res = kill(process->pid, SIGKILL);
+    kill_process_by_pid(process->pid);
 }
 
+/*recursively kill the process and it children process*/
+void kill_process_by_pid(pid_t pid)
+{
+    pid_t child_pids[CHILD_PROCESS_LEN];
+    int pids_len, i;
+    get_child_pids(pid, child_pids, &pids_len);
+    /*kill the parent process*/
+    kill(pid, SIGKILL);
+    if(pids_len > 0)
+    {
+        for(i = 0; i < pids_len; i++)
+        {
+            kill_process_by_pid(child_pids[i]);
+        }
+    }
+}
 /*save the process_list count into int pointer "count"*/
 void get_process_list_count(process_s process_list[], int* count)
 {
@@ -426,36 +445,13 @@ void create_process_cJSON_with_status(process_s *process, cJSON* p_json)
     {
         cJSON_AddStringToObject(p_json, "memory", "0 B");
     }
-    
+
 }
 
 void get_mem_by_pid(pid_t pid, char* memory)
 {
-    FILE *fp;
-    int flag = 0;
-    char buf[STR_BUFFER_SIZE];
-    char path[STR_BUFFER_SIZE];
-    char *p_buf;
-
-    sprintf(path, "/proc/%d/status", pid);
-
-    fp = fopen(path, "r");
-    while(fgets(buf, STR_BUFFER_SIZE, fp) > 0)
-    {
-        if (strncmp(buf, "VmHWM:", 6) == 0)
-        {
-            /*the buf[strlen(buf)-1] should be '\n', replace it with '\0' */
-            buf[strlen(buf)-1] = 0;
-
-            flag = 1;
-            p_buf = buf;
-            while(!(*p_buf >= '0' && *p_buf <= '9')) p_buf++;
-            strcpy(memory, p_buf);
-            break;
-        }
-    }
-    fclose(fp);
-    if (!flag)
+    parse_proc_status_val_by_tag(pid, "VmHWM", memory);
+    if (strcmp(memory, ERR_RESULT) == 0)
     {
         strcpy(memory, "cannot get memory");
     }

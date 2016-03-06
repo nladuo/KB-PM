@@ -37,6 +37,8 @@
 #define LIST_SIZE        256
 #endif /*LIST_SIZE*/
 
+#define CHILD_PROCESS_LEN        4096
+
 /*define the process struct.*/
 typedef struct{
     char        app_name[STR_BUFFER_SIZE];

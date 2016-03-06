@@ -21,9 +21,10 @@ tail -f test.log                 # check out the stdout of test.sh
 ## Log
 KB_PM use syslog for logging, you can check the log at /var/log/syslog(for ubuntu) or /var/log/messages(for centos).
 
-## TODO
-- [ ] 1. add log support.  
-- [ ] 2. stop all the child processes when stopping an app.
+## TODO 
+- [√] 1. stop all the child processes when stopping an app.
+- [ ] 2. add startup option.
+- [ ] 3. more specifically show the memory detail.
 
 ## License
 MIT

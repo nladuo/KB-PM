@@ -36,6 +36,7 @@
 #include "process.h"
 #include "server.h"
 #include "kbpm.h"
+#include "utils.h"
 
 /*daemonize the process*/
 void init_daemon(void);
@@ -57,9 +58,6 @@ void get_config_path(char* config_path);
 
 /*get the "~/.kbpm" path*/
 void get_config_dir(char* config_dir);
-
-/*check out if the buffer is number.*/
-int is_number(char *buffer);
 
 /*get the process id by checkout buffer is number and in the range of processlist*/
 int get_process_id(char *buffer);
@@ -136,6 +134,7 @@ void service_start(void)
     pthread_t socket_server_thread;
     char config_path[STR_BUFFER_SIZE];
     time_t time_now;
+    int restart_times;
 
     /*if first run the program, the config file will be not exist, create it.*/
     create_config_file();
@@ -215,9 +214,10 @@ void service_start(void)
                     syslog(LOG_INFO, "The App(%s) stopped too quickly. KB_PM service stop it automatically.",process->app_name);
                     break;
                 }
-
+                /*save the restart times as temp.*/
+                restart_times = process->restart_times;
                 server_start_process(process, 0);/*without syslog*/
-                process->restart_times++;
+                process->restart_times = restart_times + 1;
                 syslog(LOG_INFO, "Restarting %s with pid:%d",process->app_name, process->pid);
                 usleep(100 * 1000);
             }
@@ -344,19 +344,6 @@ void get_config_dir(char* config_dir)
 {
     /*get config dir according to $HOME*/
     sprintf(config_dir, "%s%s", getenv("HOME"), CONFIG_DIR);
-}
-
-int is_number(char *buffer)
-{
-    int i;
-    for (i = 0; i < strlen(buffer); i++)
-    {
-        if (!(buffer[i] <= '9' && buffer[i] >= '0'))
-        {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 int get_process_id(char *buffer)

@@ -32,5 +32,7 @@
 /*split the str by spl, save into dst, and return the dst size.*/
 extern int str_split(char dst[][STR_BUFFER_SIZE], char* str, const char* spl);
 
+/*check out if the buffer is number.*/
+extern int is_number(char *buffer);
 
 #endif /*KBPM_UTILS_H*/

@@ -22,7 +22,7 @@ tail -f test.log                 # check out the stdout of test.sh
 KB_PM use syslog for logging, you can check the log at /var/log/syslog(for ubuntu) or /var/log/messages(for centos).
 
 ## TODO 
-- [√] 1. stop all the child processes when stopping an app.
+- [x] 1. stop all the child processes when stopping an app.
 - [ ] 2. add startup option.
 - [ ] 3. more specifically show the memory detail.
 

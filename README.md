@@ -1,4 +1,6 @@
 # KB-PM
+[![Build Status](https://travis-ci.org/nladuo/KB-PM.svg)](https://travis-ci.org/nladuo/KB-PM)
+
 a CLI tool (like supervisor and pm2) keep a group of programs running continuously.
 
 ## Screenshot

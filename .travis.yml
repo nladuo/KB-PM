@@ -1,0 +1,8 @@
+language: c
+compiler:
+  - gcc
+addons:
+  apt:
+    packages:
+      - cmake
+script: cd build && cmake . && make

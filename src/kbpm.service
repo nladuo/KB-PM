@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# chkconfig: 35 90 12
+# description: KB-PM service
+#
+KBPM_PATH=/usr/local/bin/
+export HOME=/root
+
+# Start the service
+start() {
+        $KBPM_PATH/kbpm service start
+}
+
+# Stop the service
+stop() {
+        pkill kbpm
+        $KBPM_PATH/kbpm service clean
+}
+
+# Show the service status
+status() {
+        $KBPM_PATH/kbpm status
+}
+
+### main logic ###
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status
+        ;;
+  restart)
+        stop
+        start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit 0

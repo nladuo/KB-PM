@@ -3,7 +3,7 @@
 # chkconfig: 35 90 12
 # description: KB-PM service
 #
-KBPM_PATH=/usr/local/bin/
+KBPM_PATH=/usr/local/bin
 export HOME=/root
 
 # Start the service
